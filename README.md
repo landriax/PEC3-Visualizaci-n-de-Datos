@@ -26,3 +26,5 @@ Hotel Booking Demand Dataset:
 https://www.sciencedirect.com/science/article/pii/S2352340918315191
 
 ## Autor
+
+Luis Mora Ortiz
