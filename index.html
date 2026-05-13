@@ -1,70 +1,127 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portugal tiene dos turismos distintos</title>
 
-  <head>
-    <meta charset="UTF-8">
-    <title>Portugal tiene dos turismos distintos</title>
-    <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="style.css" />
 
-  </head>
-    
-  <body>
-  <div id="app">
-  <section class="hero">
-    <h1>Portugal tiene dos turismos distintos</h1>
-    <p>Una historia visual sobre las diferencias entre el turismo urbano de Lisboa y el turismo vacacional del Algarve.</p>
-    <input type="file" id="csvFile" accept=".csv" />
-    <p class="note">Sube el archivo <b>hotel_bookings.csv</b></p>
-  </section>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
 
-  <section id="summary" class="hidden">
-    <h2>Dos hoteles, dos modelos turísticos</h2>
-    <div class="cards">
-      <div class="card">
-        <h3>Total reservas</h3>
-        <p id="totalBookings">-</p>
+<body>
+  <main id="app">
+
+    <section class="hero">
+      <div class="hero-content">
+        <p class="tag">Storytelling de datos · Reservas hoteleras</p>
+        <h1>Portugal tiene dos turismos distintos</h1>
+        <p class="subtitle">
+          Una visualización interactiva sobre las diferencias entre el turismo urbano de Lisboa
+          y el turismo vacacional del Algarve.
+        </p>
       </div>
-      <div class="card">
-        <h3>City Hotel</h3>
-        <p id="cityBookings">-</p>
+    </section>
+
+    <section id="summary" class="section">
+      <h2>Dos hoteles, dos modelos turísticos</h2>
+      <p class="section-text">
+        El conjunto de datos compara reservas de un City Hotel y un Resort Hotel en Portugal.
+        A través de los datos se observa que ambos hoteles responden a patrones turísticos distintos.
+      </p>
+
+      <div class="cards">
+        <div class="card">
+          <h3>Total reservas</h3>
+          <p id="totalBookings">Cargando...</p>
+        </div>
+
+        <div class="card">
+          <h3>City Hotel</h3>
+          <p id="cityBookings">Cargando...</p>
+        </div>
+
+        <div class="card">
+          <h3>Resort Hotel</h3>
+          <p id="resortBookings">Cargando...</p>
+        </div>
+
+        <div class="card">
+          <h3>Cancelaciones</h3>
+          <p id="cancelRate">Cargando...</p>
+        </div>
       </div>
-      <div class="card">
-        <h3>Resort Hotel</h3>
-        <p id="resortBookings">-</p>
+    </section>
+
+    <section class="section story">
+      <div class="text-block">
+        <span class="chapter">01</span>
+        <h2>El calendario revela dos ritmos</h2>
+        <p>
+          El Resort Hotel concentra una parte importante de su actividad en los meses de verano,
+          mientras que el City Hotel muestra una demanda más estable durante el año.
+        </p>
       </div>
-      <div class="card">
-        <h3>Cancelaciones</h3>
-        <p id="cancelRate">-</p>
+      <div class="chart-box">
+        <canvas id="monthChart"></canvas>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="hidden story">
-    <h2>1. El calendario revela dos ritmos</h2>
-    <p>El Resort Hotel concentra gran parte de su actividad en los meses de verano, mientras que el City Hotel mantiene una demanda más estable durante el año.</p>
-    <canvas id="monthChart"></canvas>
-  </section>
+    <section class="section story alt">
+      <div class="text-block">
+        <span class="chapter">02</span>
+        <h2>Reservar no siempre significa viajar</h2>
+        <p>
+          Las cancelaciones son una parte clave del comportamiento hotelero.
+          Comparar ambos hoteles ayuda a entender dónde existe mayor incertidumbre.
+        </p>
+      </div>
+      <div class="chart-box">
+        <canvas id="cancelChart"></canvas>
+      </div>
+    </section>
 
-  <section class="hidden story">
-    <h2>2. Reservar no siempre significa viajar</h2>
-    <p>Las cancelaciones son una parte importante del comportamiento hotelero. Comparar ambos hoteles permite entender dónde existe mayor incertidumbre.</p>
-    <canvas id="cancelChart"></canvas>
-  </section>
+    <section class="section story">
+      <div class="text-block">
+        <span class="chapter">03</span>
+        <h2>El precio medio diario también cambia</h2>
+        <p>
+          El ADR permite aproximar el valor económico de cada reserva.
+          City Hotel y Resort Hotel no solo reciben turistas distintos, también generan ingresos
+          de forma diferente.
+        </p>
+      </div>
+      <div class="chart-box">
+        <canvas id="adrChart"></canvas>
+      </div>
+    </section>
 
-  <section class="hidden story">
-    <h2>3. El precio medio diario también cambia</h2>
-    <p>El ADR permite aproximar el valor económico de cada reserva. City Hotel y Resort Hotel no solo reciben turistas distintos, también generan ingresos de forma diferente.</p>
-    <canvas id="adrChart"></canvas>
-  </section>
+    <section class="section story alt">
+      <div class="text-block">
+        <span class="chapter">04</span>
+        <h2>La estancia media muestra otra diferencia</h2>
+        <p>
+          El turismo vacacional suele asociarse a estancias más largas, mientras que el turismo urbano
+          tiende a viajes más breves y frecuentes.
+        </p>
+      </div>
+      <div class="chart-box">
+        <canvas id="stayChart"></canvas>
+      </div>
+    </section>
 
-  <section class="hidden conclusion">
-    <h2>Conclusión</h2>
-    <p>Los datos muestran que no existe un único turismo portugués. Lisboa representa un modelo urbano más constante, mientras que el Algarve refleja un modelo vacacional más estacional.</p>
-  </section>
-</div>
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js'></script>
-<script src='https://cdn.jsdelivr.net/npm/chart.js'></script><script  src="./script.js"></script>
+    <section class="conclusion">
+      <h2>Conclusión</h2>
+      <p>
+        Los datos muestran que no existe un único turismo portugués. Lisboa representa un modelo urbano
+        más constante, mientras que el Algarve refleja un modelo vacacional más estacional.
+      </p>
+    </section>
 
-  </body>
-  
+  </main>
+
+  <script src="script.js"></script>
+</body>
 </html>
