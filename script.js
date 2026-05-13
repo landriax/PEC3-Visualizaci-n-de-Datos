@@ -1,171 +1,205 @@
-* {
-  box-sizing: border-box;
+document.addEventListener("DOMContentLoaded", function () {
+  Papa.parse("./hotel_bookings.csv", {
+    download: true,
+    header: true,
+    dynamicTyping: true,
+    skipEmptyLines: true,
+    complete: function (results) {
+      console.log("CSV cargado:", results.data.length, "filas");
+      buildStory(results.data);
+    },
+    error: function (error) {
+      showError("No se ha podido cargar hotel_bookings.csv. Comprueba que está en la misma carpeta que index.html.");
+      console.error(error);
+    }
+  });
+});
+
+function buildStory(data) {
+  const cleanData = data.filter(d => d.hotel);
+
+  const city = cleanData.filter(d => d.hotel === "City Hotel");
+  const resort = cleanData.filter(d => d.hotel === "Resort Hotel");
+
+  const cancelled = cleanData.filter(d => Number(d.is_canceled) === 1).length;
+
+  document.getElementById("totalBookings").textContent = cleanData.length.toLocaleString("es-ES");
+  document.getElementById("cityBookings").textContent = city.length.toLocaleString("es-ES");
+  document.getElementById("resortBookings").textContent = resort.length.toLocaleString("es-ES");
+  document.getElementById("cancelRate").textContent = ((cancelled / cleanData.length) * 100).toFixed(1) + "%";
+
+  createMonthChart(cleanData);
+  createCancelChart(city, resort);
+  createAdrChart(city, resort);
+  createStayChart(city, resort);
 }
 
-body {
-  margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
-  background: #f7f4ef;
-  color: #1f2933;
+function createMonthChart(data) {
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const monthLabels = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
+
+  const cityCounts = months.map(month =>
+    data.filter(d => d.hotel === "City Hotel" && d.arrival_date_month === month).length
+  );
+
+  const resortCounts = months.map(month =>
+    data.filter(d => d.hotel === "Resort Hotel" && d.arrival_date_month === month).length
+  );
+
+  new Chart(document.getElementById("monthChart"), {
+    type: "line",
+    data: {
+      labels: monthLabels,
+      datasets: [
+        {
+          label: "City Hotel",
+          data: cityCounts,
+          borderColor: "#12355b",
+          backgroundColor: "#12355b",
+          borderWidth: 3,
+          tension: 0.35
+        },
+        {
+          label: "Resort Hotel",
+          data: resortCounts,
+          borderColor: "#0b7285",
+          backgroundColor: "#0b7285",
+          borderWidth: 3,
+          tension: 0.35
+        }
+      ]
+    },
+    options: chartOptions("Reservas por mes según tipo de hotel")
+  });
 }
 
-.hero {
-  min-height: 100vh;
-  padding: 80px 10%;
-  display: flex;
-  align-items: center;
-  background: linear-gradient(135deg, #12355b, #0b7285);
-  color: white;
+function createCancelChart(city, resort) {
+  const cityCancel = city.filter(d => Number(d.is_canceled) === 1).length;
+  const cityNoCancel = city.length - cityCancel;
+
+  const resortCancel = resort.filter(d => Number(d.is_canceled) === 1).length;
+  const resortNoCancel = resort.length - resortCancel;
+
+  new Chart(document.getElementById("cancelChart"), {
+    type: "bar",
+    data: {
+      labels: ["City Hotel", "Resort Hotel"],
+      datasets: [
+        {
+          label: "No canceladas",
+          data: [cityNoCancel, resortNoCancel],
+          backgroundColor: "#0b7285"
+        },
+        {
+          label: "Canceladas",
+          data: [cityCancel, resortCancel],
+          backgroundColor: "#d97706"
+        }
+      ]
+    },
+    options: {
+      ...chartOptions("Reservas canceladas y no canceladas"),
+      scales: {
+        x: { stacked: true },
+        y: { stacked: true, beginAtZero: true }
+      }
+    }
+  });
 }
 
-.hero-content {
-  max-width: 950px;
+function createAdrChart(city, resort) {
+  const cityAdr = average(
+    city.map(d => Number(d.adr)).filter(v => !isNaN(v) && v > 0)
+  );
+
+  const resortAdr = average(
+    resort.map(d => Number(d.adr)).filter(v => !isNaN(v) && v > 0)
+  );
+
+  new Chart(document.getElementById("adrChart"), {
+    type: "bar",
+    data: {
+      labels: ["City Hotel", "Resort Hotel"],
+      datasets: [
+        {
+          label: "ADR medio",
+          data: [cityAdr, resortAdr],
+          backgroundColor: ["#12355b", "#0b7285"]
+        }
+      ]
+    },
+    options: chartOptions("Precio medio diario ADR por tipo de hotel")
+  });
 }
 
-.tag {
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  font-size: 14px;
-  opacity: 0.85;
-  margin-bottom: 20px;
+function createStayChart(city, resort) {
+  const cityStay = average(
+    city
+      .map(d => Number(d.stays_in_week_nights) + Number(d.stays_in_weekend_nights))
+      .filter(v => !isNaN(v) && v > 0)
+  );
+
+  const resortStay = average(
+    resort
+      .map(d => Number(d.stays_in_week_nights) + Number(d.stays_in_weekend_nights))
+      .filter(v => !isNaN(v) && v > 0)
+  );
+
+  new Chart(document.getElementById("stayChart"), {
+    type: "bar",
+    data: {
+      labels: ["City Hotel", "Resort Hotel"],
+      datasets: [
+        {
+          label: "Noches medias por reserva",
+          data: [cityStay, resortStay],
+          backgroundColor: ["#12355b", "#0b7285"]
+        }
+      ]
+    },
+    options: chartOptions("Duración media de la estancia")
+  });
 }
 
-h1 {
-  font-size: clamp(42px, 7vw, 82px);
-  line-height: 1;
-  margin: 0 0 30px;
+function chartOptions(title) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      title: {
+        display: true,
+        text: title,
+        font: {
+          size: 18
+        }
+      },
+      legend: {
+        position: "bottom"
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true
+      }
+    }
+  };
 }
 
-.subtitle {
-  font-size: 24px;
-  line-height: 1.5;
-  max-width: 850px;
+function average(values) {
+  if (values.length === 0) return 0;
+  return values.reduce((a, b) => a + b, 0) / values.length;
 }
 
-.section {
-  min-height: 90vh;
-  padding: 80px 10%;
-}
-
-.section h2 {
-  font-size: clamp(34px, 5vw, 56px);
-  color: #12355b;
-  margin-bottom: 20px;
-}
-
-.section-text {
-  font-size: 21px;
-  line-height: 1.6;
-  max-width: 900px;
-}
-
-.cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 24px;
-  margin-top: 50px;
-}
-
-.card {
-  background: white;
-  border-radius: 22px;
-  padding: 30px;
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
-}
-
-.card h3 {
-  margin: 0 0 16px;
-  color: #64748b;
-  font-size: 17px;
-}
-
-.card p {
-  margin: 0;
-  font-size: 38px;
-  font-weight: 800;
-  color: #0b7285;
-}
-
-.story {
-  display: grid;
-  grid-template-columns: 0.85fr 1.15fr;
-  align-items: center;
-  gap: 50px;
-}
-
-.alt {
-  background: #ffffff;
-}
-
-.text-block p {
-  font-size: 21px;
-  line-height: 1.7;
-  max-width: 650px;
-}
-
-.chapter {
-  display: inline-block;
-  color: #0b7285;
-  font-weight: 800;
-  font-size: 20px;
-  margin-bottom: 10px;
-}
-
-.chart-box {
-  background: white;
-  border-radius: 24px;
-  padding: 28px;
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
-  min-height: 420px;
-}
-
-.alt .chart-box {
-  background: #f7f4ef;
-}
-
-canvas {
-  width: 100% !important;
-  height: 360px !important;
-}
-
-.conclusion {
-  min-height: 80vh;
-  padding: 90px 10%;
-  background: #12355b;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.conclusion h2 {
-  font-size: clamp(38px, 6vw, 70px);
-  margin-bottom: 24px;
-}
-
-.conclusion p {
-  font-size: 24px;
-  line-height: 1.7;
-  max-width: 900px;
-}
-
-.loading-error {
-  padding: 30px;
-  margin: 30px 10%;
-  background: #fee2e2;
-  color: #7f1d1d;
-  border-radius: 16px;
-  font-weight: bold;
-}
-
-@media (max-width: 900px) {
-  .story {
-    grid-template-columns: 1fr;
-  }
-
-  .hero,
-  .section,
-  .conclusion {
-    padding: 60px 6%;
-  }
+function showError(message) {
+  const div = document.createElement("div");
+  div.className = "loading-error";
+  div.textContent = message;
+  document.body.prepend(div);
 }
