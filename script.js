@@ -1,16 +1,27 @@
 document.addEventListener("DOMContentLoaded", function () {
-  Papa.parse("./hotel_bookings.csv", {
+  const csvUrl = "https://landriax.github.io/PEC3-Visualizaci-n-de-Datos/hotel_bookings.csv";
+
+  Papa.parse(csvUrl, {
     download: true,
     header: true,
     dynamicTyping: true,
     skipEmptyLines: true,
+
     complete: function (results) {
-      console.log("CSV cargado:", results.data.length, "filas");
+      console.log("CSV cargado correctamente:", results.data.length, "filas");
+      console.log("Primera fila:", results.data[0]);
+
+      if (!results.data || results.data.length === 0) {
+        showError("El CSV se ha cargado, pero no contiene datos.");
+        return;
+      }
+
       buildStory(results.data);
     },
+
     error: function (error) {
-      showError("No se ha podido cargar hotel_bookings.csv. Comprueba que está en la misma carpeta que index.html.");
-      console.error(error);
+      console.error("Error cargando CSV:", error);
+      showError("No se ha podido cargar el CSV desde GitHub Pages.");
     }
   });
 });
@@ -18,15 +29,27 @@ document.addEventListener("DOMContentLoaded", function () {
 function buildStory(data) {
   const cleanData = data.filter(d => d.hotel);
 
+  if (cleanData.length === 0) {
+    showError("El CSV se ha leído, pero no se encuentra la columna 'hotel'. Revisa el nombre de las columnas.");
+    return;
+  }
+
   const city = cleanData.filter(d => d.hotel === "City Hotel");
   const resort = cleanData.filter(d => d.hotel === "Resort Hotel");
 
   const cancelled = cleanData.filter(d => Number(d.is_canceled) === 1).length;
 
-  document.getElementById("totalBookings").textContent = cleanData.length.toLocaleString("es-ES");
-  document.getElementById("cityBookings").textContent = city.length.toLocaleString("es-ES");
-  document.getElementById("resortBookings").textContent = resort.length.toLocaleString("es-ES");
-  document.getElementById("cancelRate").textContent = ((cancelled / cleanData.length) * 100).toFixed(1) + "%";
+  document.getElementById("totalBookings").textContent =
+    cleanData.length.toLocaleString("es-ES");
+
+  document.getElementById("cityBookings").textContent =
+    city.length.toLocaleString("es-ES");
+
+  document.getElementById("resortBookings").textContent =
+    resort.length.toLocaleString("es-ES");
+
+  document.getElementById("cancelRate").textContent =
+    ((cancelled / cleanData.length) * 100).toFixed(1) + "%";
 
   createMonthChart(cleanData);
   createCancelChart(city, resort);
@@ -46,11 +69,17 @@ function createMonthChart(data) {
   ];
 
   const cityCounts = months.map(month =>
-    data.filter(d => d.hotel === "City Hotel" && d.arrival_date_month === month).length
+    data.filter(d =>
+      d.hotel === "City Hotel" &&
+      d.arrival_date_month === month
+    ).length
   );
 
   const resortCounts = months.map(month =>
-    data.filter(d => d.hotel === "Resort Hotel" && d.arrival_date_month === month).length
+    data.filter(d =>
+      d.hotel === "Resort Hotel" &&
+      d.arrival_date_month === month
+    ).length
   );
 
   new Chart(document.getElementById("monthChart"), {
@@ -107,8 +136,13 @@ function createCancelChart(city, resort) {
     options: {
       ...chartOptions("Reservas canceladas y no canceladas"),
       scales: {
-        x: { stacked: true },
-        y: { stacked: true, beginAtZero: true }
+        x: {
+          stacked: true
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true
+        }
       }
     }
   });
@@ -116,11 +150,15 @@ function createCancelChart(city, resort) {
 
 function createAdrChart(city, resort) {
   const cityAdr = average(
-    city.map(d => Number(d.adr)).filter(v => !isNaN(v) && v > 0)
+    city
+      .map(d => Number(d.adr))
+      .filter(v => !isNaN(v) && v > 0)
   );
 
   const resortAdr = average(
-    resort.map(d => Number(d.adr)).filter(v => !isNaN(v) && v > 0)
+    resort
+      .map(d => Number(d.adr))
+      .filter(v => !isNaN(v) && v > 0)
   );
 
   new Chart(document.getElementById("adrChart"), {
@@ -142,13 +180,19 @@ function createAdrChart(city, resort) {
 function createStayChart(city, resort) {
   const cityStay = average(
     city
-      .map(d => Number(d.stays_in_week_nights) + Number(d.stays_in_weekend_nights))
+      .map(d =>
+        Number(d.stays_in_week_nights) +
+        Number(d.stays_in_weekend_nights)
+      )
       .filter(v => !isNaN(v) && v > 0)
   );
 
   const resortStay = average(
     resort
-      .map(d => Number(d.stays_in_week_nights) + Number(d.stays_in_weekend_nights))
+      .map(d =>
+        Number(d.stays_in_week_nights) +
+        Number(d.stays_in_weekend_nights)
+      )
       .filter(v => !isNaN(v) && v > 0)
   );
 
@@ -203,3 +247,4 @@ function showError(message) {
   div.textContent = message;
   document.body.prepend(div);
 }
+ 
